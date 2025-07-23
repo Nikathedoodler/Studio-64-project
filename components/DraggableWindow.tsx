@@ -1,16 +1,18 @@
 import { useDraggable } from '@dnd-kit/core';
-import React from 'react';
+import React, { ReactElement } from 'react';
 
 interface DraggableWindowProps {
     id: string;
     children: React.ReactNode;
     style?: React.CSSProperties;
+    dragHandle: ReactElement;
 }
 
 const DraggableWindow: React.FC<DraggableWindowProps> = ({
     id,
     children,
     style,
+    dragHandle,
 }) => {
     const { attributes, listeners, setNodeRef, transform } = useDraggable({
         id,
@@ -25,13 +27,15 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
         zIndex: 10,
     };
 
+    // Clone the dragHandle and inject listeners/attributes
+    const handle = React.cloneElement(dragHandle, {
+        ...listeners,
+        ...attributes,
+    });
+
     return (
-        <div
-            ref={setNodeRef}
-            style={windowStyle}
-            {...listeners}
-            {...attributes}
-        >
+        <div ref={setNodeRef} style={windowStyle}>
+            {handle}
             {children}
         </div>
     );

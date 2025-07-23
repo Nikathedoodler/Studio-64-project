@@ -80,6 +80,13 @@ export default function Desktop() {
                                 left: win.position.x,
                                 top: win.position.y,
                             }}
+                            dragHandle={
+                                <div className="flex justify-between text-black items-center mb-2 border-b pb-1 cursor-move select-none bg-gray-100 rounded-t px-2 py-1">
+                                    <span className="font-bold text-sm">
+                                        {win.label}
+                                    </span>
+                                </div>
+                            }
                         >
                             <Window
                                 title={win.label}
@@ -88,6 +95,29 @@ export default function Desktop() {
                                         prev.filter((w) => w.id !== win.id)
                                     )
                                 }
+                                renderHeader={(handleProps) => (
+                                    <div
+                                        className="flex justify-between items-center mb-2 border-b pb-1 cursor-move select-none bg-gray-100 rounded-t px-2 py-1"
+                                        {...handleProps}
+                                    >
+                                        <span className="font-bold text-sm">
+                                            {win.label}
+                                        </span>
+                                        <button
+                                            onClick={() =>
+                                                setOpenWindows((prev) =>
+                                                    prev.filter(
+                                                        (w) => w.id !== win.id
+                                                    )
+                                                )
+                                            }
+                                            className="text-xs text-red-500 hover:underline px-2 py-1"
+                                            aria-label="Close window"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                )}
                             >
                                 <div>This is the {win.label} window.</div>
                             </Window>
