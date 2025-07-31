@@ -72,12 +72,15 @@ export default function Desktop() {
     };
 
     const handleBackgroundTypeChange = (type: 'gradient' | 'image') => {
+        console.log('handleBackgroundTypeChange called with:', type);
         setBackgroundType(type);
     };
 
     const handleBackgroundValueChange = (value: string) => {
+        console.log('handleBackgroundValueChange called with:', value);
         // If it's a blob URL (image upload), always update the image URL
         if (value.startsWith('blob:')) {
+            console.log('Setting background image URL:', value);
             setBackgroundImageUrl(value);
         }
     };
