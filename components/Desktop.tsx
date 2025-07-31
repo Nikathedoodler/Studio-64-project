@@ -7,23 +7,26 @@ import DesktopBackground from './DesktopBackground';
 import { useState } from 'react';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import DraggableWindow from '@/components/DraggableWindow';
-
-const ICONS = [
-    { label: 'Portfolio', icon: '📁' },
-    { label: 'My Files', icon: '🗂️' },
-    { label: 'Merch', icon: '🛒' },
-    { label: 'Recycle Bin', icon: '🗑️' },
-];
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function Desktop() {
     const [openWindows, setOpenWindows] = useState<
         { label: string; id: string; position: { x: number; y: number } }[]
     >([]);
-    const [currentLanguage, setCurrentLanguage] = useState('EN');
     const [backgroundType, setBackgroundType] = useState<'gradient' | 'image'>(
         'gradient'
     );
     const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>('');
+
+    const { t, language, setLanguage } = useTranslation();
+
+    // Move ICONS inside component so it updates when language changes
+    const ICONS = [
+        { label: t('desktop.portfolio'), icon: '📁' },
+        { label: t('desktop.myFiles'), icon: '🗂️' },
+        { label: t('desktop.merch'), icon: '🛒' },
+        { label: t('desktop.recycleBin'), icon: '🗑️' },
+    ];
 
     const handleIconClick = (label: string) => {
         setOpenWindows((prev) => [
@@ -67,7 +70,7 @@ export default function Desktop() {
     };
 
     const handleLanguageChange = (language: string) => {
-        setCurrentLanguage(language);
+        setLanguage(language as 'EN' | 'KA');
         console.log('Language changed to:', language);
     };
 
@@ -95,7 +98,7 @@ export default function Desktop() {
             <Toolbar
                 onMenuClick={handleMenuClick}
                 onLanguageChange={handleLanguageChange}
-                currentLanguage={currentLanguage}
+                currentLanguage={language}
                 backgroundType={backgroundType}
                 onBackgroundTypeChange={handleBackgroundTypeChange}
                 onBackgroundValueChange={handleBackgroundValueChange}

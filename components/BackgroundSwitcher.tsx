@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Button } from '@heroui/react';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface BackgroundSwitcherProps {
     currentType: 'gradient' | 'image';
@@ -18,6 +19,7 @@ const BackgroundSwitcher: React.FC<BackgroundSwitcherProps> = ({
 }) => {
     console.log('BackgroundSwitcher rendered');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { t } = useTranslation();
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         console.log('handleImageUpload called');
@@ -54,14 +56,14 @@ const BackgroundSwitcher: React.FC<BackgroundSwitcherProps> = ({
                 variant="bordered"
                 onClick={handleUploadClick}
             >
-                Upload Image
+                {t('toolbar.background')}
             </Button>
             <Button
                 className="bg-gray-700 px-3 py-1 rounded"
                 variant="bordered"
                 onClick={handleResetClick}
             >
-                Reset
+                {t('toolbar.reset')}
             </Button>
             <input
                 ref={fileInputRef}
