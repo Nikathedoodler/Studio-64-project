@@ -3,6 +3,7 @@
 import DesktopIcon from '@/components/DesktopIcon';
 import Window from '@/components/Window';
 import Toolbar from '@/components/Toolbar';
+import DesktopBackground from './DesktopBackground';
 import { useState } from 'react';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import DraggableWindow from '@/components/DraggableWindow';
@@ -19,6 +20,10 @@ export default function Desktop() {
         { label: string; id: string; position: { x: number; y: number } }[]
     >([]);
     const [currentLanguage, setCurrentLanguage] = useState('EN');
+    const [backgroundType, setBackgroundType] = useState<'gradient' | 'image'>(
+        'gradient'
+    );
+    const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>('');
 
     const handleIconClick = (label: string) => {
         setOpenWindows((prev) => [
@@ -66,12 +71,31 @@ export default function Desktop() {
         console.log('Language changed to:', language);
     };
 
+    const handleBackgroundTypeChange = (type: 'gradient' | 'image') => {
+        setBackgroundType(type);
+    };
+
+    const handleBackgroundValueChange = (value: string) => {
+        // If it's a blob URL (image upload), always update the image URL
+        if (value.startsWith('blob:')) {
+            setBackgroundImageUrl(value);
+        }
+    };
+
     return (
-        <main className="min-h-screen w-full bg-gradient-to-br from-blue-200 to-blue-500 flex flex-col">
+        <main className="min-h-screen w-full flex flex-col relative">
+            <DesktopBackground
+                type={backgroundType}
+                imageUrl={backgroundImageUrl}
+                className=""
+            />
             <Toolbar
                 onMenuClick={handleMenuClick}
                 onLanguageChange={handleLanguageChange}
                 currentLanguage={currentLanguage}
+                backgroundType={backgroundType}
+                onBackgroundTypeChange={handleBackgroundTypeChange}
+                onBackgroundValueChange={handleBackgroundValueChange}
             />
             <DndContext onDragEnd={handleDragEnd}>
                 <div className="flex-1 relative">
