@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Button } from '@heroui/react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useAdmin } from '@/lib/hooks/useAdmin';
 
 interface BackgroundSwitcherProps {
     currentType: 'gradient' | 'image';
@@ -17,9 +18,13 @@ const BackgroundSwitcher: React.FC<BackgroundSwitcherProps> = ({
     onValueChange,
     onClose,
 }) => {
-    console.log('BackgroundSwitcher rendered');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { t } = useTranslation();
+
+    const { isAdmin, isLoading } = useAdmin();
+
+    // Only show if user is admin
+    if (!isAdmin) return null;
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         console.log('handleImageUpload called');
