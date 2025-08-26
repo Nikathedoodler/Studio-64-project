@@ -6,9 +6,10 @@ import PortfolioWindow from '@/components/PortfolioWindow';
 import MyFilesWindow from '@/components/MyFilesWindow';
 import MerchWindow from '@/components/MerchWindow';
 import RecycleBinWindow from '@/components/RecycleBinWindow';
+import AdminWindow from '@/components/AdminWindow';
 import Toolbar from '@/components/Toolbar';
 import DesktopBackground from './DesktopBackground';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import DraggableWindow from '@/components/DraggableWindow';
 import { useTranslation } from '@/lib/hooks/useTranslation';
@@ -22,16 +23,33 @@ export default function Desktop() {
         'gradient'
     );
     const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>('');
+    const [isAdmin, setIsAdmin] = useState(true); // For demo purposes, set to true
+    const [desktopIcons, setDesktopIcons] = useState([
+        { id: '1', label: 'Portfolio', icon: '📁', enabled: true },
+        { id: '2', label: 'My Files', icon: '🗂️', enabled: true },
+        { id: '3', label: 'Merch', icon: '🛒', enabled: true },
+        { id: '4', label: 'Recycle Bin', icon: '🗑️', enabled: true },
+    ]);
 
     const { t, language, setLanguage } = useTranslation();
 
-    // Move ICONS inside component so it updates when language changes
-    const ICONS = [
-        { label: t('desktop.portfolio'), icon: '📁' },
-        { label: t('desktop.myFiles'), icon: '🗂️' },
-        { label: t('desktop.merch'), icon: '🛒' },
-        { label: t('desktop.recycleBin'), icon: '🗑️' },
-    ];
+    // Load background from localStorage after component mounts (prevents hydration issues)
+    useEffect(() => {
+        const savedImage = localStorage.getItem('studio64-background-image');
+        if (savedImage) {
+            setBackgroundType('image');
+            setBackgroundImageUrl(savedImage);
+        }
+    }, []);
+
+    // Use dynamic desktop icons that can be managed by admin
+    const ICONS = desktopIcons
+        .filter((icon) => icon.enabled)
+        .map((icon) => ({
+            label: icon.label,
+            icon: icon.icon,
+            id: icon.id,
+        }));
 
     const handleIconClick = (label: string) => {
         setOpenWindows((prev) => {
@@ -87,10 +105,6 @@ export default function Desktop() {
         );
     };
 
-    const handleMenuClick = () => {
-        console.log('Menu clicked - functionality to be implemented');
-    };
-
     const handleLanguageChange = (language: string) => {
         setLanguage(language as 'EN' | 'KA');
         console.log('Language changed to:', language);
@@ -122,6 +136,60 @@ export default function Desktop() {
         });
     };
 
+    // Admin handlers
+    const handleIconUpdate = (newIcons: any[]) => {
+        setDesktopIcons(newIcons);
+    };
+
+    const handleBackgroundUpdate = (type: 'image', value: string) => {
+        setBackgroundType('image');
+        setBackgroundImageUrl(value);
+        // Save background image to localStorage for persistence
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('studio64-background-image', value);
+        }
+    };
+
+    const clearBackgroundImage = () => {
+        setBackgroundType('gradient');
+        setBackgroundImageUrl('');
+        // Remove background image from localStorage
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('studio64-background-image');
+        }
+    };
+
+    const handleMenuClick = () => {
+        if (isAdmin) {
+            // Open admin window
+            setOpenWindows((prev) => {
+                const existingAdmin = prev.find(
+                    (window) => window.label === 'Admin Panel'
+                );
+                if (existingAdmin) {
+                    setFocusedWindowId(existingAdmin.id);
+                    return [
+                        ...prev.filter((w) => w.label !== 'Admin Panel'),
+                        existingAdmin,
+                    ];
+                }
+
+                const newAdminWindow = {
+                    label: 'Admin Panel',
+                    id: 'admin-' + Date.now(),
+                    position: {
+                        x: 100 + prev.length * 40,
+                        y: 100 + prev.length * 40,
+                    },
+                };
+                setFocusedWindowId(newAdminWindow.id);
+                return [...prev, newAdminWindow];
+            });
+        } else {
+            console.log('Admin access required');
+        }
+    };
+
     return (
         <main className="min-h-screen w-full flex flex-col relative">
             <DesktopBackground
@@ -136,6 +204,7 @@ export default function Desktop() {
                 backgroundType={backgroundType}
                 onBackgroundTypeChange={handleBackgroundTypeChange}
                 onBackgroundValueChange={handleBackgroundValueChange}
+                isAdmin={isAdmin}
             />
             <DndContext onDragEnd={handleDragEnd}>
                 <div
@@ -212,6 +281,20 @@ export default function Desktop() {
                                         )
                                     }
                                     onFocus={() => handleWindowFocus(win.id)}
+                                />
+                            ) : win.label === 'Admin Panel' ? (
+                                <AdminWindow
+                                    onClose={() =>
+                                        setOpenWindows((prev) =>
+                                            prev.filter((w) => w.id !== win.id)
+                                        )
+                                    }
+                                    onFocus={() => handleWindowFocus(win.id)}
+                                    onIconUpdate={handleIconUpdate}
+                                    onBackgroundUpdate={handleBackgroundUpdate}
+                                    onClearBackground={clearBackgroundImage}
+                                    currentIcons={desktopIcons}
+                                    currentBackgroundValue={backgroundImageUrl}
                                 />
                             ) : (
                                 <Window

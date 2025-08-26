@@ -9,6 +9,7 @@ interface ToolbarProps {
     backgroundType?: 'gradient' | 'image';
     onBackgroundTypeChange?: (type: 'gradient' | 'image') => void;
     onBackgroundValueChange?: (value: string) => void;
+    isAdmin?: boolean;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -18,6 +19,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
     backgroundType = 'gradient',
     onBackgroundTypeChange,
     onBackgroundValueChange,
+    isAdmin = false,
 }) => {
     const { t, language, setLanguage } = useTranslation();
 
@@ -33,9 +35,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
                 <div className="text-xl font-bold">{t('toolbar.logo')}</div>
                 <button
                     onClick={onMenuClick}
-                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded"
+                    className={`px-3 py-1 rounded flex items-center gap-2 ${
+                        isAdmin
+                            ? 'bg-blue-600 hover:bg-blue-700'
+                            : 'bg-gray-700 hover:bg-gray-600'
+                    }`}
                 >
-                    {t('toolbar.menu')}
+                    {isAdmin && <span className="text-xs">👑</span>}
+                    {isAdmin ? 'Admin Menu' : t('toolbar.menu')}
                 </button>
             </div>
 
