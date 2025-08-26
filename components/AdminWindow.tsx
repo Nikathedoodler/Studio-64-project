@@ -2,7 +2,17 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
-import { Settings, Image, Palette, Plus, Trash2, Save } from 'lucide-react';
+import {
+    Settings,
+    Image,
+    Palette,
+    Plus,
+    Trash2,
+    Save,
+    Upload,
+    Loader2,
+} from 'lucide-react';
+import { storageUtils, BackgroundImage } from '@/lib/supabase/storage';
 
 interface DesktopIcon {
     id: string;
@@ -36,6 +46,11 @@ const AdminWindow: React.FC<AdminWindowProps> = ({
     const [icons, setIcons] = useState<DesktopIcon[]>(currentIcons);
     const [backgroundValue, setBackgroundValue] = useState(
         currentBackgroundValue
+    );
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [backgroundImages, setBackgroundImages] = useState<BackgroundImage[]>(
+        []
     );
     const [newIconLabel, setNewIconLabel] = useState('');
     const [newIconSymbol, setNewIconSymbol] = useState('');
@@ -87,16 +102,35 @@ const AdminWindow: React.FC<AdminWindowProps> = ({
         onBackgroundUpdate?.('image', backgroundValue);
     };
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
         const file = event.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target?.result as string;
-                setBackgroundValue(result);
-                // Don't apply immediately - wait for user to click "Apply Image"
-            };
-            reader.readAsDataURL(file);
+            setIsUploading(true);
+            setUploadProgress(0);
+
+            try {
+                // Upload to Supabase Storage
+                const uploadedImage = await storageUtils.uploadBackgroundImage(
+                    file
+                );
+
+                if (uploadedImage) {
+                    setBackgroundValue(uploadedImage.url);
+                    setBackgroundImages((prev) => [...prev, uploadedImage]);
+                    console.log('Image uploaded successfully:', uploadedImage);
+                } else {
+                    console.error('Failed to upload image');
+                    alert('Failed to upload image. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                alert('Error uploading image. Please try again.');
+            } finally {
+                setIsUploading(false);
+                setUploadProgress(0);
+            }
         }
     };
 
@@ -180,12 +214,23 @@ const AdminWindow: React.FC<AdminWindowProps> = ({
                 <label className="block text-sm font-medium">
                     Upload Background Image
                 </label>
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="w-full p-2 border rounded text-sm"
-                />
+                <div className="relative">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        disabled={isUploading}
+                        className="w-full p-2 border rounded text-sm disabled:opacity-50"
+                    />
+                    {isUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded">
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="animate-spin" size={16} />
+                                <span className="text-sm">Uploading...</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 {currentBackgroundValue && !backgroundValue && (
                     <div className="space-y-2">
                         <label className="block text-sm font-medium">
@@ -227,6 +272,55 @@ const AdminWindow: React.FC<AdminWindowProps> = ({
                             >
                                 Remove
                             </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Uploaded Background Images */}
+                {backgroundImages.length > 0 && (
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium">
+                            Uploaded Images
+                        </label>
+                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                            {backgroundImages.map((image) => (
+                                <div key={image.id} className="relative group">
+                                    <img
+                                        src={image.url}
+                                        alt={image.filename}
+                                        className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80"
+                                        onClick={() =>
+                                            setBackgroundValue(image.url)
+                                        }
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            if (
+                                                await storageUtils.deleteBackgroundImage(
+                                                    image.id
+                                                )
+                                            ) {
+                                                setBackgroundImages((prev) =>
+                                                    prev.filter(
+                                                        (img) =>
+                                                            img.id !== image.id
+                                                    )
+                                                );
+                                                if (
+                                                    backgroundValue ===
+                                                    image.url
+                                                ) {
+                                                    setBackgroundValue('');
+                                                }
+                                            }
+                                        }}
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Delete image"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}

@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import DraggableWindow from '@/components/DraggableWindow';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { storageUtils } from '@/lib/supabase/storage';
 
 export default function Desktop() {
     const [openWindows, setOpenWindows] = useState<
@@ -33,13 +34,30 @@ export default function Desktop() {
 
     const { t, language, setLanguage } = useTranslation();
 
-    // Load background from localStorage after component mounts (prevents hydration issues)
+    // Load background from Supabase Storage after component mounts (prevents hydration issues)
     useEffect(() => {
-        const savedImage = localStorage.getItem('studio64-background-image');
-        if (savedImage) {
-            setBackgroundType('image');
-            setBackgroundImageUrl(savedImage);
-        }
+        const loadBackground = async () => {
+            try {
+                const currentBackground =
+                    await storageUtils.getCurrentBackground();
+                if (currentBackground) {
+                    setBackgroundType('image');
+                    setBackgroundImageUrl(currentBackground.url);
+                }
+            } catch (error) {
+                console.error('Error loading background:', error);
+                // Fallback to localStorage if Supabase fails
+                const savedImage = localStorage.getItem(
+                    'studio64-background-image'
+                );
+                if (savedImage) {
+                    setBackgroundType('image');
+                    setBackgroundImageUrl(savedImage);
+                }
+            }
+        };
+
+        loadBackground();
     }, []);
 
     // Use dynamic desktop icons that can be managed by admin
@@ -144,9 +162,11 @@ export default function Desktop() {
     const handleBackgroundUpdate = (type: 'image', value: string) => {
         setBackgroundType('image');
         setBackgroundImageUrl(value);
-        // Save background image to localStorage for persistence
+        // Save background image to both Supabase and localStorage for persistence
         if (typeof window !== 'undefined') {
             localStorage.setItem('studio64-background-image', value);
+            // Note: In a full implementation, we'd also save the background selection to a database table
+            // For now, we're using localStorage as the source of truth for the current background
         }
     };
 
