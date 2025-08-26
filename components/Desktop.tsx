@@ -3,6 +3,9 @@
 import DesktopIcon from '@/components/DesktopIcon';
 import Window from '@/components/Window';
 import PortfolioWindow from '@/components/PortfolioWindow';
+import MyFilesWindow from '@/components/MyFilesWindow';
+import MerchWindow from '@/components/MerchWindow';
+import RecycleBinWindow from '@/components/RecycleBinWindow';
 import Toolbar from '@/components/Toolbar';
 import DesktopBackground from './DesktopBackground';
 import { useState } from 'react';
@@ -176,6 +179,33 @@ export default function Desktop() {
                         >
                             {win.label === t('desktop.portfolio') ? (
                                 <PortfolioWindow
+                                    onClose={() =>
+                                        setOpenWindows((prev) =>
+                                            prev.filter((w) => w.id !== win.id)
+                                        )
+                                    }
+                                    onFocus={() => handleWindowFocus(win.id)}
+                                />
+                            ) : win.label === t('desktop.myFiles') ? (
+                                <MyFilesWindow
+                                    onClose={() =>
+                                        setOpenWindows((prev) =>
+                                            prev.filter((w) => w.id !== win.id)
+                                        )
+                                    }
+                                    onFocus={() => handleWindowFocus(win.id)}
+                                />
+                            ) : win.label === t('desktop.merch') ? (
+                                <MerchWindow
+                                    onClose={() =>
+                                        setOpenWindows((prev) =>
+                                            prev.filter((w) => w.id !== win.id)
+                                        )
+                                    }
+                                    onFocus={() => handleWindowFocus(win.id)}
+                                />
+                            ) : win.label === t('desktop.recycleBin') ? (
+                                <RecycleBinWindow
                                     onClose={() =>
                                         setOpenWindows((prev) =>
                                             prev.filter((w) => w.id !== win.id)
