@@ -2,10 +2,13 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import ImageViewer from '@/components/media/ImageViewer';
+import { createMockImageData } from '@/lib/media/imageUtils';
 
 interface MyFilesWindowProps {
     onClose: () => void;
     onFocus?: () => void;
+    isAdmin?: boolean;
 }
 
 // Define the My Files folder structure
@@ -16,9 +19,16 @@ const MY_FILES_FOLDERS = [
     { id: 'equipment', name: 'Equipment', icon: '📷' },
 ];
 
-const MyFilesWindow: React.FC<MyFilesWindowProps> = ({ onClose, onFocus }) => {
+const MyFilesWindow: React.FC<MyFilesWindowProps> = ({
+    onClose,
+    onFocus,
+    isAdmin = false,
+}) => {
     const [currentFolder, setCurrentFolder] = useState<string | null>(null);
     const { t } = useTranslation();
+
+    // Mock data for images
+    const mockImages = createMockImageData();
 
     const handleFolderClick = (folderId: string) => {
         setCurrentFolder(folderId);
@@ -36,10 +46,10 @@ const MyFilesWindow: React.FC<MyFilesWindowProps> = ({ onClose, onFocus }) => {
                         <button
                             key={folder.id}
                             onClick={() => handleFolderClick(folder.id)}
-                            className="flex flex-col items-center p-4 border rounded hover:bg-gray-50 transition-colors"
+                            className="flex flex-col items-center p-4 border rounded hover:bg-gray-50 transition-colors text-black"
                         >
                             <span className="text-3xl mb-2">{folder.icon}</span>
-                            <span className="text-sm font-medium">
+                            <span className="text-sm font-medium text-black">
                                 {folder.name}
                             </span>
                         </button>
@@ -50,6 +60,17 @@ const MyFilesWindow: React.FC<MyFilesWindowProps> = ({ onClose, onFocus }) => {
 
         // Handle different folder types
         const folder = MY_FILES_FOLDERS.find((f) => f.id === currentFolder);
+
+        if (currentFolder === 'equipment') {
+            return (
+                <ImageViewer
+                    images={mockImages}
+                    onClose={onClose}
+                    onFocus={onFocus}
+                    isAdmin={isAdmin}
+                />
+            );
+        }
 
         if (currentFolder === 'team') {
             return (
@@ -405,7 +426,7 @@ const MyFilesWindow: React.FC<MyFilesWindowProps> = ({ onClose, onFocus }) => {
             <div className="flex justify-between items-center p-3 border-b bg-gray-100">
                 <div className="flex items-center">
                     <span className="text-lg mr-2">🗂️</span>
-                    <span className="font-bold text-sm">
+                    <span className="font-bold text-sm text-black">
                         {currentFolder
                             ? `${t('desktop.myFiles')} - ${
                                   MY_FILES_FOLDERS.find(

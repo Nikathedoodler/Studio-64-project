@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import VideoPlayer from '@/components/media/VideoPlayer';
+import ImageViewer from '@/components/media/ImageViewer';
 import { createMockVideoData } from '@/lib/media/utils';
+import { createMockImageData } from '@/lib/media/imageUtils';
 
 interface PortfolioWindowProps {
     onClose: () => void;
@@ -29,8 +31,9 @@ const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
     const [currentFolder, setCurrentFolder] = useState<string | null>(null);
     const { t } = useTranslation();
 
-    // Mock data for videos
+    // Mock data for videos and images
     const mockVideos = createMockVideoData();
+    const mockImages = createMockImageData();
 
     const handleFolderClick = (folderId: string) => {
         setCurrentFolder(folderId);
@@ -48,10 +51,10 @@ const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
                         <button
                             key={folder.id}
                             onClick={() => handleFolderClick(folder.id)}
-                            className="flex flex-col items-center p-4 border rounded hover:bg-gray-50 transition-colors"
+                            className="flex flex-col items-center p-4 border rounded hover:bg-gray-50 transition-colors text-black"
                         >
                             <span className="text-3xl mb-2">{folder.icon}</span>
-                            <span className="text-sm font-medium">
+                            <span className="text-sm font-medium text-black">
                                 {folder.name}
                             </span>
                         </button>
@@ -74,6 +77,17 @@ const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
             );
         }
 
+        if (currentFolder === 'photos') {
+            return (
+                <ImageViewer
+                    images={mockImages}
+                    onClose={onClose}
+                    onFocus={onFocus}
+                    isAdmin={isAdmin}
+                />
+            );
+        }
+
         // For other folders, show placeholder for now
         return (
             <div className="p-4">
@@ -84,11 +98,15 @@ const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
                     >
                         ← Back
                     </button>
-                    <span className="text-lg font-medium">{folder?.name}</span>
+                    <span className="text-lg font-medium text-black">
+                        {folder?.name}
+                    </span>
                 </div>
-                <div className="text-center text-gray-500 py-8">
+                <div className="text-center text-gray-600 py-8">
                     <div className="text-4xl mb-2">{folder?.icon}</div>
-                    <p>Content for {folder?.name} will be implemented next</p>
+                    <p className="text-black">
+                        Content for {folder?.name} will be implemented next
+                    </p>
                 </div>
             </div>
         );
@@ -102,7 +120,7 @@ const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
             <div className="flex justify-between items-center p-3 border-b bg-gray-100">
                 <div className="flex items-center">
                     <span className="text-lg mr-2">📁</span>
-                    <span className="font-bold text-sm">
+                    <span className="font-bold text-sm text-black">
                         {currentFolder
                             ? `${t('desktop.portfolio')} - ${
                                   PORTFOLIO_FOLDERS.find(
