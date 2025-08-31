@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import VideoPlayer from '@/components/media/VideoPlayer';
 import ImageViewer from '@/components/media/ImageViewer';
+import FontPreviewer from '@/components/media/FontPreviewer';
 import { createMockVideoData } from '@/lib/media/utils';
 import { createMockImageData } from '@/lib/media/imageUtils';
+import { createMockFontData } from '@/lib/media/fontUtils';
 
 interface PortfolioWindowProps {
     onClose: () => void;
@@ -31,9 +33,10 @@ const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
     const [currentFolder, setCurrentFolder] = useState<string | null>(null);
     const { t } = useTranslation();
 
-    // Mock data for videos and images
+    // Mock data for videos, images, and fonts
     const mockVideos = createMockVideoData();
     const mockImages = createMockImageData();
+    const mockFonts = createMockFontData();
 
     const handleFolderClick = (folderId: string) => {
         setCurrentFolder(folderId);
@@ -81,6 +84,17 @@ const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
             return (
                 <ImageViewer
                     images={mockImages}
+                    onClose={onClose}
+                    onFocus={onFocus}
+                    isAdmin={isAdmin}
+                />
+            );
+        }
+
+        if (currentFolder === 'fonts') {
+            return (
+                <FontPreviewer
+                    fonts={mockFonts}
                     onClose={onClose}
                     onFocus={onFocus}
                     isAdmin={isAdmin}
