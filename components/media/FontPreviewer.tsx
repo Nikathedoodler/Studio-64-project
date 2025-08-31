@@ -9,6 +9,7 @@ import {
     getFontWeightName,
     loadFont,
 } from '@/lib/media/fontUtils';
+import { fontStorageUtils } from '@/lib/supabase/fontUtils';
 import {
     Upload,
     Trash2,
@@ -30,11 +31,12 @@ interface FontPreviewerProps {
 }
 
 const FontPreviewer: React.FC<FontPreviewerProps> = ({
-    fonts,
+    fonts: initialFonts,
     onClose,
     onFocus,
     isAdmin = false,
 }) => {
+    const [fonts, setFonts] = useState<FontFile[]>(initialFonts || []);
     const [selectedFont, setSelectedFont] = useState<FontFile | null>(
         fonts[0] || null
     );
@@ -47,8 +49,88 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
     const [showGrid, setShowGrid] = useState(true);
     const [loadedFonts, setLoadedFonts] = useState<Set<string>>(new Set());
     const [loadingFonts, setLoadingFonts] = useState<Set<string>>(new Set());
+    const [isLoading, setIsLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const previewRef = useRef<HTMLDivElement>(null);
+
+    // Load fonts from Supabase on component mount
+    useEffect(() => {
+        const loadFonts = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const supabaseFonts = await fontStorageUtils.getAllFonts();
+
+                // If no fonts in Supabase, show mock data for testing
+                if (supabaseFonts.length === 0) {
+                    console.log(
+                        'No fonts in Supabase, showing mock data for testing'
+                    );
+                    const mockFonts = [
+                        {
+                            id: 'mock-1',
+                            filename: 'roboto.ttf',
+                            title: 'Roboto',
+                            description: 'Mock font for testing (Google Fonts)',
+                            fileType: 'font' as const,
+                            fileSize: 168832,
+                            fileUrl:
+                                'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
+                            folderId: 'fonts',
+                            uploadedAt: new Date(),
+                            uploadedBy: 'mock-user',
+                            format: 'ttf',
+                            fontFamily: 'Roboto',
+                            fontWeight: '400',
+                            fontStyle: 'normal',
+                        },
+                        {
+                            id: 'mock-2',
+                            filename: 'open-sans.ttf',
+                            title: 'Open Sans',
+                            description: 'Mock font for testing (Google Fonts)',
+                            fileType: 'font' as const,
+                            fileSize: 156672,
+                            fileUrl:
+                                'https://fonts.gstatic.com/s/opensans/v34/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVIGxA.woff2',
+                            folderId: 'fonts',
+                            uploadedAt: new Date(),
+                            uploadedBy: 'mock-user',
+                            format: 'ttf',
+                            fontFamily: 'Open Sans',
+                            fontWeight: '300',
+                            fontStyle: 'normal',
+                        },
+                    ];
+                    setFonts(mockFonts);
+                    if (!selectedFont) {
+                        setSelectedFont(mockFonts[0]);
+                    }
+                } else {
+                    setFonts(supabaseFonts);
+                    if (supabaseFonts.length > 0 && !selectedFont) {
+                        setSelectedFont(supabaseFonts[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading fonts:', err);
+                setError('Failed to load fonts');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadFonts();
+    }, []);
+
+    // Update selected font when fonts change
+    useEffect(() => {
+        if (fonts.length > 0 && !selectedFont) {
+            setSelectedFont(fonts[0]);
+        }
+    }, [fonts, selectedFont]);
 
     // Load selected font when it changes
     useEffect(() => {
@@ -88,18 +170,73 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
         setSelectedFont(font);
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file && isAdmin) {
-            // TODO: Implement file upload to Supabase
-            console.log('Uploading font:', file.name);
+        if (!file || !isAdmin) return;
+
+        setUploading(true);
+        setError(null);
+
+        try {
+            // Extract font family name from filename (remove extension and clean up)
+            const fontFamily = file.name
+                .replace(/\.[^/.]+$/, '') // Remove extension
+                .replace(/[-_]/g, ' ') // Replace dashes/underscores with spaces
+                .replace(/\b\w/g, (l) => l.toUpperCase()); // Capitalize words
+
+            const result = await fontStorageUtils.uploadFont(file, {
+                title: fontFamily,
+                description: `Uploaded font: ${file.name}`,
+                fontFamily: fontFamily,
+                fontWeight: '400',
+                fontStyle: 'normal',
+            });
+
+            if (result.success && result.font) {
+                // Add the new font to the list
+                setFonts((prev) => [result.font!, ...prev]);
+                setSelectedFont(result.font);
+                // Clear the file input
+                e.target.value = '';
+            } else {
+                setError(result.error || 'Upload failed');
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            setError('Upload failed. Please try again.');
+        } finally {
+            setUploading(false);
         }
     };
 
-    const handleDeleteFont = (fontId: string) => {
-        if (isAdmin && confirm('Are you sure you want to delete this font?')) {
-            // TODO: Implement delete from Supabase
-            console.log('Deleting font:', fontId);
+    const handleDeleteFont = async (fontId: string) => {
+        if (
+            !isAdmin ||
+            !confirm('Are you sure you want to delete this font?')
+        ) {
+            return;
+        }
+
+        try {
+            const result = await fontStorageUtils.deleteFont(fontId);
+
+            if (result.success) {
+                // Remove the font from the list
+                setFonts((prev) => prev.filter((font) => font.id !== fontId));
+
+                // If the deleted font was selected, select the first available font
+                if (selectedFont?.id === fontId) {
+                    const remainingFonts = fonts.filter(
+                        (font) => font.id !== fontId
+                    );
+                    setSelectedFont(remainingFonts[0] || null);
+                }
+            } else {
+                setError(result.error || 'Delete failed');
+            }
+        } catch (err) {
+            console.error('Delete error:', err);
+            setError('Delete failed. Please try again.');
         }
     };
 
@@ -117,22 +254,43 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
         setBackgroundColor('#ffffff');
     };
 
+    if (isLoading) {
+        return (
+            <div className="bg-white border rounded shadow-lg min-w-[600px] min-h-[400px] flex items-center justify-center">
+                <div className="text-center text-gray-500">
+                    <div className="text-4xl mb-2">🔤</div>
+                    <p>Loading fonts...</p>
+                </div>
+            </div>
+        );
+    }
+
     if (!fonts || fonts.length === 0) {
         return (
             <div className="bg-white border rounded shadow-lg min-w-[600px] min-h-[400px] flex items-center justify-center">
                 <div className="text-center text-gray-500">
                     <div className="text-4xl mb-2">🔤</div>
                     <p>No fonts available</p>
+                    {error && (
+                        <div className="mt-2 text-red-500 text-sm">{error}</div>
+                    )}
                     {isAdmin && (
                         <div className="mt-4">
-                            <label className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer">
+                            <label
+                                className={`px-4 py-2 text-white rounded cursor-pointer ${
+                                    uploading
+                                        ? 'bg-gray-400'
+                                        : 'bg-blue-500 hover:bg-blue-600'
+                                }`}
+                            >
                                 <Upload size={16} className="inline mr-2" />
-                                Upload Fonts
+                                {uploading ? 'Uploading...' : 'Upload Fonts'}
                                 <input
                                     type="file"
                                     accept=".ttf,.otf,.woff,.woff2"
                                     multiple
                                     onChange={handleFileUpload}
+                                    disabled={uploading}
                                     className="hidden"
                                 />
                             </label>
@@ -155,6 +313,9 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                     <span className="font-bold text-sm text-black">
                         Fonts ({fonts.length} fonts)
                     </span>
+                    {error && (
+                        <div className="ml-4 text-red-500 text-xs">{error}</div>
+                    )}
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -165,13 +326,22 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                         {showGrid ? <List size={16} /> : <Grid3X3 size={16} />}
                     </button>
                     {isAdmin && (
-                        <label className="p-1 hover:bg-gray-200 rounded cursor-pointer">
-                            <Upload size={16} />
+                        <label
+                            className={`p-1 rounded cursor-pointer ${
+                                uploading ? 'bg-gray-300' : 'hover:bg-gray-200'
+                            }`}
+                        >
+                            {uploading ? (
+                                <RotateCw size={16} className="animate-spin" />
+                            ) : (
+                                <Upload size={16} />
+                            )}
                             <input
                                 type="file"
                                 accept=".ttf,.otf,.woff,.woff2"
                                 multiple
                                 onChange={handleFileUpload}
+                                disabled={uploading}
                                 className="hidden"
                             />
                         </label>
