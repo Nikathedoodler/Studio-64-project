@@ -63,56 +63,9 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
             try {
                 const supabaseFonts = await fontStorageUtils.getAllFonts();
 
-                // If no fonts in Supabase, show mock data for testing
-                if (supabaseFonts.length === 0) {
-                    console.log(
-                        'No fonts in Supabase, showing mock data for testing'
-                    );
-                    const mockFonts = [
-                        {
-                            id: 'mock-1',
-                            filename: 'roboto.ttf',
-                            title: 'Roboto',
-                            description: 'Mock font for testing (Google Fonts)',
-                            fileType: 'font' as const,
-                            fileSize: 168832,
-                            fileUrl:
-                                'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
-                            folderId: 'fonts',
-                            uploadedAt: new Date(),
-                            uploadedBy: 'mock-user',
-                            format: 'ttf',
-                            fontFamily: 'Roboto',
-                            fontWeight: '400',
-                            fontStyle: 'normal',
-                        },
-                        {
-                            id: 'mock-2',
-                            filename: 'open-sans.ttf',
-                            title: 'Open Sans',
-                            description: 'Mock font for testing (Google Fonts)',
-                            fileType: 'font' as const,
-                            fileSize: 156672,
-                            fileUrl:
-                                'https://fonts.gstatic.com/s/opensans/v34/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVIGxA.woff2',
-                            folderId: 'fonts',
-                            uploadedAt: new Date(),
-                            uploadedBy: 'mock-user',
-                            format: 'ttf',
-                            fontFamily: 'Open Sans',
-                            fontWeight: '300',
-                            fontStyle: 'normal',
-                        },
-                    ];
-                    setFonts(mockFonts);
-                    if (!selectedFont) {
-                        setSelectedFont(mockFonts[0]);
-                    }
-                } else {
-                    setFonts(supabaseFonts);
-                    if (supabaseFonts.length > 0 && !selectedFont) {
-                        setSelectedFont(supabaseFonts[0]);
-                    }
+                setFonts(supabaseFonts);
+                if (supabaseFonts.length > 0 && !selectedFont) {
+                    setSelectedFont(supabaseFonts[0]);
                 }
             } catch (err) {
                 console.error('Error loading fonts:', err);
@@ -303,7 +256,7 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
 
     return (
         <div
-            className="bg-white border rounded shadow-lg min-w-[600px] min-h-[400px]"
+            className="bg-white border rounded shadow-lg min-w-[600px] min-h-[400px] max-h-[600px] overflow-hidden"
             onClick={onFocus}
         >
             {/* Header */}
@@ -355,12 +308,12 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                 </div>
             </div>
 
-            <div className="flex h-96">
+            <div className="flex h-96 max-h-96 overflow-hidden">
                 {/* Font List */}
                 <div
                     className={`${
                         showGrid ? 'w-64' : 'w-80'
-                    } border-r bg-gray-50 overflow-y-auto`}
+                    } border-r bg-gray-50 flex-shrink-0`}
                 >
                     <div className="p-3 border-b">
                         <h4 className="font-medium text-sm text-black">
@@ -386,7 +339,7 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                                             <span className="text-lg">
                                                 {getFontFormatIcon(font.format)}
                                             </span>
-                                            <span className="font-medium text-sm text-black truncate">
+                                            <span className="font-medium text-sm text-black">
                                                 {font.title}
                                             </span>
                                         </div>
@@ -451,7 +404,7 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                                             </span>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="font-medium text-sm text-black truncate">
+                                                    <h3 className="font-medium text-sm text-black">
                                                         {font.title}
                                                     </h3>
                                                     {loadingFonts.has(
@@ -463,7 +416,7 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                                                         />
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-gray-500 truncate">
+                                                <p className="text-xs text-gray-500">
                                                     {font.description}
                                                 </p>
                                                 <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
@@ -518,11 +471,11 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                 </div>
 
                 {/* Font Preview Area */}
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col overflow-hidden">
                     {selectedFont ? (
                         <>
                             {/* Controls */}
-                            <div className="p-4 border-b bg-gray-50">
+                            <div className="p-4 border-b bg-gray-50 flex-shrink-0">
                                 <div className="grid grid-cols-2 gap-4">
                                     {/* Text Input */}
                                     <div>
@@ -543,20 +496,25 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                                     {/* Font Size */}
                                     <div>
                                         <label className="block text-sm font-medium text-black mb-2">
-                                            Font Size: {fontSize}px
+                                            Font Size
                                         </label>
-                                        <input
-                                            type="range"
-                                            min="12"
-                                            max="72"
-                                            value={fontSize}
-                                            onChange={(e) =>
-                                                setFontSize(
-                                                    parseInt(e.target.value)
-                                                )
-                                            }
-                                            className="w-full"
-                                        />
+                                        <div className="flex gap-2">
+                                            {[12, 24, 36].map((size) => (
+                                                <button
+                                                    key={size}
+                                                    onClick={() =>
+                                                        setFontSize(size)
+                                                    }
+                                                    className={`px-3 py-1 text-sm rounded border ${
+                                                        fontSize === size
+                                                            ? 'bg-blue-500 text-white border-blue-500'
+                                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    {size}px
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
 
                                     {/* Text Color */}
@@ -635,10 +593,10 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                             </div>
 
                             {/* Preview */}
-                            <div className="flex-1 p-6 flex items-center justify-center">
+                            <div className="flex-1 p-6 flex items-center justify-center overflow-hidden min-h-0">
                                 <div
                                     ref={previewRef}
-                                    className="max-w-full text-center"
+                                    className="w-full h-full max-w-full max-h-full text-center overflow-hidden"
                                     style={{
                                         fontFamily: selectedFont.fontFamily,
                                         fontSize: `${fontSize}px`,
@@ -648,12 +606,14 @@ const FontPreviewer: React.FC<FontPreviewerProps> = ({
                                         fontStyle: selectedFont.fontStyle,
                                         padding: '20px',
                                         borderRadius: '8px',
-                                        minHeight: '120px',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         wordBreak: 'break-word',
                                         lineHeight: '1.4',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        boxSizing: 'border-box',
                                     }}
                                 >
                                     {previewText || 'Enter text to preview...'}
