@@ -274,6 +274,7 @@ export default function Desktop() {
                                         )
                                     }
                                     onFocus={() => handleWindowFocus(win.id)}
+                                    isAdmin={isAdmin}
                                 />
                             ) : win.label === t('desktop.myFiles') ? (
                                 <MyFilesWindow

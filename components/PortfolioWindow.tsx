@@ -2,10 +2,13 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import VideoPlayer from '@/components/media/VideoPlayer';
+import { createMockVideoData } from '@/lib/media/utils';
 
 interface PortfolioWindowProps {
     onClose: () => void;
     onFocus?: () => void;
+    isAdmin?: boolean;
 }
 
 // Define the portfolio folder structure
@@ -21,9 +24,13 @@ const PORTFOLIO_FOLDERS = [
 const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
     onClose,
     onFocus,
+    isAdmin = false,
 }) => {
     const [currentFolder, setCurrentFolder] = useState<string | null>(null);
     const { t } = useTranslation();
+
+    // Mock data for videos
+    const mockVideos = createMockVideoData();
 
     const handleFolderClick = (folderId: string) => {
         setCurrentFolder(folderId);
@@ -53,8 +60,21 @@ const PortfolioWindow: React.FC<PortfolioWindowProps> = ({
             );
         }
 
-        // For now, show a placeholder for each folder
+        // Handle different folder types
         const folder = PORTFOLIO_FOLDERS.find((f) => f.id === currentFolder);
+
+        if (currentFolder === 'videos') {
+            return (
+                <VideoPlayer
+                    videos={mockVideos}
+                    onClose={onClose}
+                    onFocus={onFocus}
+                    isAdmin={isAdmin}
+                />
+            );
+        }
+
+        // For other folders, show placeholder for now
         return (
             <div className="p-4">
                 <div className="flex items-center mb-4">
